@@ -8,18 +8,20 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field"
+} from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import createClient from '@/lib/client'
 import { useState } from "react"
 import { Spinner } from "../ui/spinner"
 import { useNavigate } from "react-router";
+import { useDispatch } from "react-redux";
+import {login} from '@/features/auth/authSlice';
 
 const authForm = ({ title }: { title: string }) => {
   const isSignup = title === "signup"
@@ -27,6 +29,7 @@ const authForm = ({ title }: { title: string }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const supabase = createClient();
+  const dispatch = useDispatch();
   let navigate = useNavigate();
 
   const form = useForm<SigninFormData | SignupFormData>({
@@ -45,7 +48,7 @@ const authForm = ({ title }: { title: string }) => {
   const type = isSignup ? "Sign Up" : "Sign In"
 
   const handleSignup = async (values: SignupFormData) => {
-    const { email, password, confirmPassword } = values
+    const { email, password, confirmPassword, role="user" } = values
     setError(null);
     if (password !== confirmPassword) {
       setError('Passwords do not match')
@@ -56,7 +59,12 @@ const authForm = ({ title }: { title: string }) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options:{
+          data:{
+            role:role
+          }
+        }
       })
       if (error) {
         console.log("error", error)
@@ -80,6 +88,7 @@ const authForm = ({ title }: { title: string }) => {
     try { 
       const { error } = await supabase.auth.signInWithPassword({email,password})
       if(error) throw error;
+      dispatch(login());
       navigate("/dashboard")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
