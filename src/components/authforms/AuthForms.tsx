@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import createClient from '@/lib/client'
-import { useState } from "react"
+import { useState} from "react"
 import { Spinner } from "../ui/spinner"
 import { useNavigate } from "react-router";
 
@@ -56,7 +56,10 @@ const authForm = ({ title }: { title: string }) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/sign-in`
+        }
       })
       if (error) {
         console.log("error", error)
@@ -72,7 +75,6 @@ const authForm = ({ title }: { title: string }) => {
   }
 
   const handleSignin = async (values: SigninFormData) => {
-    console.log("login pressed")
     const {email, password} = values;
     setIsLoading(true);
     setError(null);
