@@ -1,6 +1,6 @@
-import * as z from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { signinSchema, signupSchema, type SigninFormData, type SignupFormData } from "@/schemas/auth"
 import {
   Card,
   CardContent,
@@ -21,38 +21,6 @@ import { useState } from "react"
 import { Spinner } from "../ui/spinner"
 import { useNavigate } from "react-router";
 
-const signinSchema = z.object({
-  email: z.email({
-    message: "Email is required"
-  }),
-  password: z.string({
-    message: "Password is required"
-  }).min(6, {
-    message: "Password must be at least 6 characters long"
-  })
-})
-
-const signupSchema = z.object({
-  fullname: z.string({
-    message: "Full name is required"
-  }),
-  email: z.email({
-    message: "Email is required"
-  }),
-  password: z.string()
-    .min(8, "Password must be at least 8 characters long")
-    .regex(/[a-zA-Z]/, "Password must contain at least one letter")
-    .regex(/[0-9]/, "Password must contain at least one number"),
-  confirmPassword: z.string({
-    message: "Confirm Password is required"
-  }).min(6, {
-    message: "Confirm Password must be at least 6 characters long"
-  })
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"]
-})
-
 const authForm = ({ title }: { title: string }) => {
   const isSignup = title === "signup"
   const [error, setError] = useState<string | null>(null)
@@ -61,8 +29,8 @@ const authForm = ({ title }: { title: string }) => {
   const supabase = createClient();
   let navigate = useNavigate();
 
-  const form = useForm<z.infer<typeof signupSchema> | z.infer<typeof signinSchema>>({
-    resolver: zodResolver(isSignup ? signupSchema : signinSchema),
+  const form = useForm<SigninFormData | SignupFormData>({
+    resolver: zodResolver(title === 'signin' ? signinSchema : signupSchema),
     defaultValues: isSignup ? {
       fullname: "",
       email: "",
@@ -76,7 +44,7 @@ const authForm = ({ title }: { title: string }) => {
 
   const type = isSignup ? "Sign Up" : "Sign In"
 
-  const handleSignup = async (values: z.infer<typeof signupSchema>) => {
+  const handleSignup = async (values: SignupFormData) => {
     const { email, password, confirmPassword } = values
     setError(null);
     if (password !== confirmPassword) {
@@ -103,7 +71,8 @@ const authForm = ({ title }: { title: string }) => {
     }
   }
 
-  const handleSignin = async (values: z.infer<typeof signinSchema>)=>{
+  const handleSignin = async (values: SigninFormData) => {
+    console.log("login pressed")
     const {email, password} = values;
     setIsLoading(true);
     setError(null);
@@ -119,11 +88,11 @@ const authForm = ({ title }: { title: string }) => {
     }
   }
 
-  const onSubmit = (values: z.infer<typeof signupSchema> | z.infer<typeof signinSchema>) => {
+  const onSubmit = (values: SignupFormData| SigninFormData) => {
     if (title === 'signup') {
-      handleSignup(values as z.infer<typeof signupSchema>)
+      handleSignup(values as SignupFormData)
     } else{
-      handleSignin(values as z.infer<typeof signinSchema>)
+      handleSignin(values as SigninFormData)
     }
   }
   return (
