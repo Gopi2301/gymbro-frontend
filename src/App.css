@@ -1,0 +1,8 @@
+/* App.css - migrated to Tailwind v4 utilities */
+/* Custom styles removed - use Tailwind utilities instead:
+   - .bg-background-dark -> use bg-background dark:bg-background
+   - .bg-primary -> use bg-primary
+   - .text-primary -> use text-primary
+   - .bg-primary-light -> use bg-primary
+   - .container -> use max-w-7xl mx-auto px-5 w-full
+*/

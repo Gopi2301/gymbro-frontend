@@ -1,0 +1,194 @@
+import * as z from "zod"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import createClient from '@/lib/client'
+import { useState } from "react"
+import { Spinner } from "../ui/spinner"
+import { useNavigate } from "react-router";
+
+const signinSchema = z.object({
+  email: z.email({
+    message: "Email is required"
+  }),
+  password: z.string({
+    message: "Password is required"
+  }).min(6, {
+    message: "Password must be at least 6 characters long"
+  })
+})
+
+const signupSchema = z.object({
+  fullname: z.string({
+    message: "Full name is required"
+  }),
+  email: z.email({
+    message: "Email is required"
+  }),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters long")
+    .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+  confirmPassword: z.string({
+    message: "Confirm Password is required"
+  }).min(6, {
+    message: "Confirm Password must be at least 6 characters long"
+  })
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"]
+})
+
+const authForm = ({ title }: { title: string }) => {
+  const isSignup = title === "signup"
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const supabase = createClient();
+  let navigate = useNavigate();
+
+  const form = useForm<z.infer<typeof signupSchema> | z.infer<typeof signinSchema>>({
+    resolver: zodResolver(isSignup ? signupSchema : signinSchema),
+    defaultValues: isSignup ? {
+      fullname: "",
+      email: "",
+      password: "",
+      confirmPassword: ""
+    } : {
+      email: "",
+      password: ""
+    }
+  })
+
+  const type = isSignup ? "Sign Up" : "Sign In"
+
+  const handleSignup = async (values: z.infer<typeof signupSchema>) => {
+    const { email, password, confirmPassword } = values
+    setError(null);
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password
+      })
+      if (error) {
+        console.log("error", error)
+        throw error
+      }
+      setSuccess(true);
+    } catch (error: unknown) {
+      console.log("error", error)
+      setError(error instanceof Error ? error.message : 'An error occurred')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSignin = async (values: z.infer<typeof signinSchema>)=>{
+    const {email, password} = values;
+    setIsLoading(true);
+    setError(null);
+
+    try { 
+      const { error } = await supabase.auth.signInWithPassword({email,password})
+      if(error) throw error;
+      navigate("/dashboard")
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An error occurred')
+    }finally{
+      setIsLoading(false)
+    }
+  }
+
+  const onSubmit = (values: z.infer<typeof signupSchema> | z.infer<typeof signinSchema>) => {
+    if (title === 'signup') {
+      handleSignup(values as z.infer<typeof signupSchema>)
+    } else{
+      handleSignin(values as z.infer<typeof signinSchema>)
+    }
+  }
+  return (
+    <>
+      {success && type === 'Sign Up' ? (
+        <Card className="bg-background dark:bg-background-dark border-none">
+          <CardHeader>
+            <CardTitle className="text-2xl text-white">Thank you for signing up!</CardTitle>
+            <CardDescription className="text-white">Check your email to confirm</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground text-gray-500">
+              You've successfully signed up. Please check your email to confirm your account before
+              signing in.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-2">
+          <Card className="bg-background dark:bg-background-dark border-none">
+            <CardContent>
+              {title === "signup" && (
+                <FieldGroup className="gap-1">
+                  <FieldLabel className="text-white">Full Name</FieldLabel>
+                  <Input className="auth-input" type="text" {...form.register("fullname")} />
+                  <FieldError>{(form.formState.errors as any)?.fullname?.message}</FieldError>
+                </FieldGroup>
+              )}
+
+              <FieldGroup className='gap-1'>
+                <FieldLabel className='text-white'>{title === "signup" ? "Email Address" : "Email"}</FieldLabel>
+                <Input className='auth-input' type="email" {...form.register("email")} />
+                <FieldError>{form.formState.errors.email?.message}</FieldError>
+              </FieldGroup>
+              <FieldGroup className="gap-1">
+                <FieldLabel className='text-white'>Password</FieldLabel>
+
+                <Input className="auth-input" type="password" {...form.register("password")} />
+                <FieldError>{form.formState.errors.password?.message}</FieldError>
+              </FieldGroup>
+              {title === "signup" && (
+                <FieldGroup className="gap-1">
+                  <FieldLabel className='text-white'>Confirm Password</FieldLabel>
+                  <Input className="auth-input" type="password" {...form.register("confirmPassword")} />
+                  <FieldError>{(form.formState.errors as any)?.confirmPassword?.message}</FieldError>
+                </FieldGroup>
+              )}
+            </CardContent>
+            <CardFooter className="flex flex-col">
+              <>{error && <p className="text-red-500">{error}</p>}</>
+              <Button className='auth-btn-primary mt-4' type="submit">{
+                isLoading ? (
+                  <><Spinner /></>
+                ) : (
+                  <>{type}</>
+                )
+              }</Button>
+              
+            </CardFooter>
+          </Card>
+        </form>
+      )}
+    </>
+
+  )
+}
+
+export default authForm
