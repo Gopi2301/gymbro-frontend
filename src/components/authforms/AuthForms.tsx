@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form"
+import { useForm, type FieldErrors } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { signinSchema, signupSchema, type SigninFormData, type SignupFormData } from "@/schemas/auth"
 import {
@@ -16,21 +16,19 @@ import {
 } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import createClient from '@/lib/client'
 import { useState} from "react"
 import { Spinner } from "../ui/spinner"
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 import {login} from '@/features/auth/authSlice';
 
-const authForm = ({ title }: { title: string }) => {
+const AuthForm = ({ title }: { title: string }) => {
   const isSignup = title === "signup"
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const supabase = createClient();
   const dispatch = useDispatch();
-  let navigate = useNavigate();
+  const navigate = useNavigate();
 
   const form = useForm<SigninFormData | SignupFormData>({
     resolver: zodResolver(title === 'signin' ? signinSchema : signupSchema),
@@ -48,52 +46,92 @@ const authForm = ({ title }: { title: string }) => {
   const type = isSignup ? "Sign Up" : "Sign In"
 
   const handleSignup = async (values: SignupFormData) => {
-    const { email, password, confirmPassword } = values
+    const { email, password, confirmPassword, fullname } = values;
     setError(null);
+    
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
+      setError('Passwords do not match');
+      return;
     }
+    
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/sign-in`,
-          data:{
-            role:"user"
-          }
-        }
-      })
-      if (error) {
-        console.log("error", error)
-        throw error
+      // Call backend signup endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          name: fullname,
+          role:'user'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Signup failed');
       }
+
       setSuccess(true);
+      form.reset();
     } catch (error: unknown) {
-      console.log("error", error)
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      console.error('Signup error:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred during signup');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   const handleSignin = async (values: SigninFormData) => {
-    const {email, password} = values;
+    const { email, password } = values;
     setIsLoading(true);
     setError(null);
 
-    try { 
-      const { error } = await supabase.auth.signInWithPassword({email,password})
-      if(error) throw error;
-      dispatch(login());
-      navigate("/dashboard")
+    try {
+      // Call backend signin endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'}/auth/signin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid email or password');
+      }
+
+      // Store the access token
+      const user = data.data.user
+      const access_token = data.data.session.access_token
+      const refresh_token = data.data.session.refresh_token
+      // Set the token in localStorage or cookies
+      localStorage.setItem('access_token', access_token);
+      
+      // Update Redux store with user data
+      dispatch(login({
+        id: user.id,
+        email: user.email,
+        fullName: user.name,
+        token: access_token,
+        role: user.role,
+        refreshToken: refresh_token
+      }));
+      
+      // Redirect to dashboard
+      navigate("/dashboard");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
-    }finally{
-      setIsLoading(false)
+      console.error('Signin error:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred during sign in');
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -127,7 +165,7 @@ const authForm = ({ title }: { title: string }) => {
                 <FieldGroup className="gap-1">
                   <FieldLabel className="text-white">Full Name</FieldLabel>
                   <Input className="auth-input" type="text" {...form.register("fullname")} />
-                  <FieldError>{(form.formState.errors as any)?.fullname?.message}</FieldError>
+                  <FieldError>{(form.formState.errors as FieldErrors<SignupFormData>)?.fullname?.message}</FieldError>
                 </FieldGroup>
               )}
 
@@ -146,7 +184,7 @@ const authForm = ({ title }: { title: string }) => {
                 <FieldGroup className="gap-1">
                   <FieldLabel className='text-white'>Confirm Password</FieldLabel>
                   <Input className="auth-input" type="password" {...form.register("confirmPassword")} />
-                  <FieldError>{(form.formState.errors as any)?.confirmPassword?.message}</FieldError>
+                  <FieldError>{(form.formState.errors as FieldErrors<SignupFormData>).confirmPassword?.message}</FieldError>
                 </FieldGroup>
               )}
             </CardContent>
@@ -169,4 +207,4 @@ const authForm = ({ title }: { title: string }) => {
   )
 }
 
-export default authForm
+export default AuthForm
