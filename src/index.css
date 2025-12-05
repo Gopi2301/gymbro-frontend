@@ -41,7 +41,49 @@
   }
 }
 
- :root {
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
+  h1 {
+    @apply text-5xl font-black text-white tracking-tighter mb-4;
+  }
+  button{
+    @apply cursor-pointer;
+  }
+}
+
+@layer components {
+  .auth-btn-primary {
+    @apply flex h-12 w-full items-center justify-center rounded-lg bg-primary px-4 py-2 text-base font-bold text-primary-foreground hover:bg-primary/90 transition-opacity;
+  }
+  
+  .auth-input {
+    @apply w-full rounded-lg border border-gray-700 bg-gray-900/40 text-gray-200 focus:border-primary focus:ring-primary/50 placeholder:text-gray-600 text-sm;
+  }
+}
+/* container */
+.container {
+  @apply mx-auto max-w-6xl;
+}
+
+.auth-select-dropdown {
+  @apply bg-gray-900;
+}
+
+.auth-select-item {
+  @apply text-gray-600 hover:bg-gray-600/80 text-sm text-white;
+}
+/* Text */
+.text-input-label{
+  @apply text-gray-300;
+}
+.text-input-error{
+  @apply text-red-400
+}
+
+
+:root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -108,20 +150,4 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-}
-
-@layer base {
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-@layer components {
-  .auth-btn-primary {
-    @apply flex h-12 w-full items-center justify-center rounded-lg bg-primary px-4 py-2 text-base font-bold text-primary-foreground hover:bg-primary/90 transition-opacity;
-  }
-  
-  .auth-input {
-    @apply w-full rounded-lg border border-gray-700 bg-gray-900/40 text-gray-200 focus:border-primary focus:ring-primary/50 placeholder:text-gray-600 text-sm;
-  }
 }

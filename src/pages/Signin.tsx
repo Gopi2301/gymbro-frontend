@@ -13,7 +13,7 @@ const Signin = () => {
                     <div className="relative hidden lg:flex items-center justify-center">
                         <img className="absolute inset-0 h-full w-full object-cover opacity-30" data-alt="A person in a modern gym lifting weights, with a focused and determined expression" src="signin-hero.png" />
                         <div className="relative z-10 p-12 text-center text-white">
-                            <h1 className="text-5xl font-black tracking-tighter mb-4">Unleash Your Potential</h1>
+                            <h1 className="">Unleash Your Potential</h1>
                             <p className="text-lg text-gray-300">Track your workouts, see your progress, and achieve the results you've always wanted.</p>
                         </div>
                     </div>

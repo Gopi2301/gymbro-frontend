@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import { Counter } from './features/counter/Counter';
 import SignUp from './pages/Signup';
 import Signin from './pages/Signin';
+import AdminSignup from './pages/admin/Signup';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Route path="/sign-up" element={<SignUp />} />
       <Route path="/counter" element={<Counter />} />
       <Route path="/sign-in" element={<Signin />} />
+      <Route path="/admin/sign-up" element={<AdminSignup />} />
     </Routes>
 
   );
