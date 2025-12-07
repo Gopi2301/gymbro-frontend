@@ -118,18 +118,20 @@ const AuthForm = ({ title }: { title: string }) => {
       );
 
       const data = await response.json();
-      console.log(data.data.session);
-      if (!response.ok) {
-        throw new Error(data.message || "Invalid email or password");
+      console.log("signin",data.message);
+      if (response.status === 401) {
+        setError(data.message || "Invalid email or password");
+        return;
       }
 
       // Store the access token
       const user = data.data.user;
       const access_token = data.data.session.access_token;
       const refresh_token = data.data.session.refresh_token;
+      const role = data.data.user.role;
       // Set the token in localStorage or cookies
       // localStorage.setItem('access_token', access_token);
-      console.log(access_token, refresh_token);
+      console.log(access_token, refresh_token, role);
       // Update Redux store with user data
       dispatch(
         login({
@@ -137,7 +139,7 @@ const AuthForm = ({ title }: { title: string }) => {
           email: user.email,
           fullName: user.name,
           token: access_token,
-          role: user.role,
+          role: role,
           refreshToken: refresh_token,
         })
       );

@@ -43,6 +43,8 @@ const authSlice = createSlice({
             // store tokens in localStorage
             localStorage.setItem("access_token", action.payload.token);
             localStorage.setItem("refresh_token", action.payload.refreshToken);
+            localStorage.setItem("role", action.payload.role);
+            
         },
         logout: (state) => {
             state.isAuthenticated = false;

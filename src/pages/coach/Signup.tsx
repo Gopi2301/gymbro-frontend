@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {useForm, type FieldErrors, Controller} from "react-hook-form";
+import {useForm, Controller} from "react-hook-form";
 import {
   Field,
   FieldError,
@@ -11,14 +11,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-import type { AdminSignupFormData } from "@/schemas/auth";
+import type { CoachSignupFormData } from "@/schemas/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { adminSignupSchema } from "@/schemas/auth";
+import { coachSignupSchema } from "@/schemas/auth";
 
-const AdminSignup = () => {
+const CoachSignup = () => {
   const navigate = useNavigate();
-  const form = useForm<AdminSignupFormData>({
-    resolver: zodResolver(adminSignupSchema),
+  const form = useForm<CoachSignupFormData>({
+    resolver: zodResolver(coachSignupSchema),
     defaultValues: {
       fullname: "",
       work_email: "",
@@ -29,8 +29,28 @@ const AdminSignup = () => {
       gym_address: "",
     }
   })
-  const onSubmit = (data: AdminSignupFormData) => {
-    console.log(data);
+  const onSubmit = async (data: CoachSignupFormData) => {
+    // call api to create coach
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/coach/signup`,{
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        gymAddress:data.gym_address,
+        gymName:data.gym_name,
+        members:data.members,
+        name:data.fullname,
+        password:data.password,
+        work_email:data.work_email,
+        role:"coach"
+      })
+    })
+    const result = await response.json();
+    console.log(result);
+    if(response.ok){
+      navigate("/sign-in");
+    }
   }
   return (
     <div className="bg-background-dark h-full w-full">
@@ -202,4 +222,4 @@ const AdminSignup = () => {
   );
 };
 
-export default AdminSignup;
+export default CoachSignup;
