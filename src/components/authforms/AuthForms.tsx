@@ -22,6 +22,7 @@ import { Spinner } from "../ui/spinner";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 import { login } from "@/features/auth/authSlice";
+import { api } from "@/lib/api";
 
 const AuthForm = ({ title }: { title: string }) => {
   const isSignup = title === "signup";
@@ -61,21 +62,15 @@ const AuthForm = ({ title }: { title: string }) => {
 
     try {
       // Call backend signup endpoint
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/auth/signup`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-            name: fullname,
-            role: "user",
-          }),
-        }
-      );
+      const response = await api("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+          name: fullname,
+          role: "user",
+        }),
+      });
 
       const data = await response.json();
 
@@ -104,18 +99,11 @@ const AuthForm = ({ title }: { title: string }) => {
 
     try {
       // Call backend signin endpoint
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"
-        }/auth/signin`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      // Call backend signin endpoint
+      const response = await api("/auth/signin", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
 
       const data = await response.json();
       console.log("signin",data.message);
@@ -129,23 +117,25 @@ const AuthForm = ({ title }: { title: string }) => {
       const access_token = data.data.session.access_token;
       const refresh_token = data.data.session.refresh_token;
       const role = data.data.user.role;
-      // Set the token in localStorage or cookies
-      // localStorage.setItem('access_token', access_token);
+
       console.log(access_token, refresh_token, role);
       // Update Redux store with user data
       dispatch(
         login({
-          id: user.id,
-          email: user.email,
-          fullName: user.name,
+          user: {
+            id: user.id,
+            email: user.email,
+            fullName: user.name,
+            role: role,
+          },
           token: access_token,
-          role: role,
           refreshToken: refresh_token,
+          role: role,
         })
       );
 
       // Redirect to dashboard
-      navigate("/dashboard");
+      navigate(`/${role}/dashboard`);
     } catch (error: unknown) {
       console.error("Signin error:", error);
       setError(
