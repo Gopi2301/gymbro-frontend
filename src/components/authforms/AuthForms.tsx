@@ -119,6 +119,7 @@ const AuthForm = ({ title }: { title: string }) => {
       const role = data.data.user.role;
 
       console.log(access_token, refresh_token, role);
+      console.log(`${role}/dashboard`)
       // Update Redux store with user data
       dispatch(
         login({
